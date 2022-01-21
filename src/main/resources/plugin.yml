@@ -1,7 +1,7 @@
 name: ${name}
 version: ${version}
 main: ${main}
-authors: [ cyberpwn, NextdoorPsycho ]
+authors: [ cyberpwn, NextdoorPsycho, StealthMuskrat ]
 website: volmit.com
 api-version: ${apiversion}
 description: The most reliable world manager
