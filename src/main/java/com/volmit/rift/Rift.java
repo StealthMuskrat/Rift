@@ -10,9 +10,11 @@ import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.checkerframework.checker.units.qual.C;
@@ -33,6 +35,11 @@ import java.util.Set;
 public class Rift extends JavaPlugin {
     public static Rift instance;
     private List<RiftWorldConfig> configs;
+    private static final String[] subCommandNames = new String[]{"load","create","import","unload","delete","to","evacuate","move","list","generators"};
+    private static final String WORLD_NAME = "World_Name";
+    private static final String GENERATOR = "Generator";
+    private static final String SEED = "Seed";
+    private static final String ENVIRONMENT = "Environment";
 
     public void onEnable()
     {
@@ -146,6 +153,8 @@ public class Rift extends JavaPlugin {
             sender.sendMessage(ChatColor.LIGHT_PURPLE + "/rift unload"+ ChatColor.GRAY+" <name>");
             sender.sendMessage(ChatColor.LIGHT_PURPLE + "/rift delete"+ ChatColor.GRAY+" <name>");
             sender.sendMessage(ChatColor.LIGHT_PURPLE + "/rift to"+ ChatColor.GRAY+" <world>");
+            sender.sendMessage(ChatColor.LIGHT_PURPLE + "/rift evacuate"+ ChatColor.GRAY+" <from-world> <to-world>");
+            sender.sendMessage(ChatColor.LIGHT_PURPLE + "/rift move"+ ChatColor.GRAY+" <to-world> <players...>");
             sender.sendMessage(ChatColor.LIGHT_PURPLE + "/rift list");
             sender.sendMessage(ChatColor.LIGHT_PURPLE + "/rift generators");
         }
@@ -420,9 +429,104 @@ public class Rift extends JavaPlugin {
                     sender.sendMessage(ChatColor.GRAY + "- " + ChatColor.GREEN + i.getName() + " " + ChatColor.GRAY + " by " + ChatColor.WHITE + printAuthors(i.getDescription().getAuthors()));
                 }
             }
+        }else if(args[0].equalsIgnoreCase("evacuate") && args.length == 3) {
+            World from = Bukkit.getWorld(args[1]);
+            World to = Bukkit.getWorld(args[2]);
+            if(from != null && to != null) {
+                for(Player player: from.getPlayers()) {
+                    player.teleport(to.getSpawnLocation());
+                }
+            }
+        }else if(args[0].equalsIgnoreCase("move") && args.length >= 3) {
+            World to = Bukkit.getWorld(args[1]);
+            if(to != null) {
+                for(int i = 2; i < args.length; i++) {
+                    Player player = Bukkit.getPlayer(args[i]);
+                    if(player != null) {
+                        player.teleport(to.getSpawnLocation());
+                    }
+                }
+            }
         }
 
         return true;
+    }
+
+    public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
+        ArrayList<String> result = new ArrayList<>();
+
+        if(args.length == 1) {
+            for(String name: subCommandNames) {
+                if(name.startsWith(args[0])) {
+                    result.add(name);
+                }
+            }
+        }else if(args.length == 2) {
+            if(args[0].equalsIgnoreCase(subCommandNames[0])) {//load
+                result.add(WORLD_NAME);
+            }else if(args[0].equalsIgnoreCase(subCommandNames[1])) {//create
+                result.add(WORLD_NAME);
+            }else if(args[0].equalsIgnoreCase(subCommandNames[2])) {//import
+                result.add(WORLD_NAME);
+            }else if(args[0].equalsIgnoreCase(subCommandNames[3])) {//unload
+                for(World world: Bukkit.getWorlds()) {
+                    if(world.getName().startsWith(args[1])) {
+                        result.add(world.getName());
+                    }
+                }
+            }else if(args[0].equalsIgnoreCase(subCommandNames[4])) {//delete
+                result.add(WORLD_NAME);
+            }else if(args[0].equalsIgnoreCase(subCommandNames[5])) {//to
+                for(World world: Bukkit.getWorlds()) {
+                    if(world.getName().startsWith(args[1])) {
+                        result.add(world.getName());
+                    }
+                }
+            }else if(args[0].equalsIgnoreCase(subCommandNames[6])) {//evacuate
+                for(World world: Bukkit.getWorlds()) {
+                    if(world.getName().startsWith(args[1])) {
+                        result.add(world.getName());
+                    }
+                }
+            }else if(args[0].equalsIgnoreCase(subCommandNames[7])) {//move
+                for(World world: Bukkit.getWorlds()) {
+                    if(world.getName().startsWith(args[1])) {
+                        result.add(world.getName());
+                    }
+                }
+            }
+        }else if(args.length == 3 || (args.length > 3 && args[0].equalsIgnoreCase(subCommandNames[7]))) {
+            if(args[0].equalsIgnoreCase(subCommandNames[0])) {//load
+                result.add(GENERATOR);
+            }else if(args[0].equalsIgnoreCase(subCommandNames[1])) {//create
+                result.add(GENERATOR);
+            }else if(args[0].equalsIgnoreCase(subCommandNames[2])) {//import
+                result.add(GENERATOR);
+            }else if(args[0].equalsIgnoreCase(subCommandNames[6])) {//evacuate
+                for(World world: Bukkit.getWorlds()) {
+                    if(world.getName().startsWith(args[2])) {
+                        result.add(world.getName());
+                    }
+                }
+            }else if(args[0].equalsIgnoreCase(subCommandNames[7])) {//evacuate
+                for(Player player: Bukkit.getOnlinePlayers()) {
+                    if (player.getName().startsWith(args[args.length-1])) {
+                        result.add(player.getName());
+                    }
+                }
+            }
+        }else if(args.length == 4) {
+            if(args[0].equalsIgnoreCase(subCommandNames[1])) {
+                result.add(SEED);
+            }
+        }
+        else if(args.length == 5) {
+            if(args[0].equalsIgnoreCase(subCommandNames[1])) {
+                result.add(ENVIRONMENT);
+            }
+        }
+
+        return result;
     }
 
     private String printAuthors(List<String> authors) {
